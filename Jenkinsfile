@@ -112,7 +112,7 @@ pipeline {
                     
                     withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         checkout([
-                            $class: 'GitSCM',
+                            \$class: 'GitSCM',
                             branches: [[name: "*/${SOURCE_BRANCH}"]],
                             userRemoteConfigs: [[url: "${GIT_REPO}", credentialsId: 'SFDEVOPS_GIT_CREDENTIALS']]
                         ])
@@ -129,19 +129,16 @@ pipeline {
                     echo "[Stage: Setup & Validation] Setting up environment..."
                     
                     sh '''
-                        # Create necessary directories
                         mkdir -p ${DEPLOY_DIR}
                         mkdir -p ${DELTA_PKG_DIR}
                         mkdir -p ${SCRIPTS_DIR}
                         mkdir -p ${CONFIG_DIR}
                         
-                        # Display directory structure
                         echo "Current working directory: $(pwd)"
                         echo "Environment setup:"
                         ls -la
                     '''
                     
-                    // Validate SFDX CLI installation
                     sh '''
                         echo "Validating SFDX CLI installation..."
                         sfdx --version || {
@@ -165,14 +162,11 @@ pipeline {
                         sh '''
                             cd ${WORKSPACE}
                             
-                            # Configure Git
                             git config user.email "${GIT_USER_EMAIL}"
                             git config user.name "${GIT_USER_NAME}"
                             
-                            # Setup remote with credentials
                             git remote set-url origin "https://${GIT_USER}:${GIT_PASS}@github.com/manand79/sfdevops.git"
                             
-                            # Fetch latest from remote
                             git fetch origin
                             
                             echo "Creating promotion branch: ${PROMOTION_BRANCH}"
@@ -204,7 +198,6 @@ pipeline {
                             --action prepare
                     '''
                     
-                    // Verify delta package was created
                     sh '''
                         if [ ! -f "${DELTA_PKG_DIR}/package.xml" ]; then
                             echo "ERROR: Delta package.xml not found"
@@ -213,7 +206,7 @@ pipeline {
                         
                         echo "Delta package contents:"
                         ls -la ${DELTA_PKG_DIR}/
-                        echo "\nPackage.xml:"
+                        echo "\\nPackage.xml:"
                         head -50 ${DELTA_PKG_DIR}/package.xml
                     '''
                     
@@ -228,7 +221,6 @@ pipeline {
                     echo "[Stage: Salesforce Org Authentication] Authenticating to ${ENVIRONMENT} org..."
                     
                     sh '''
-                        # Create auth configuration file
                         python3 ${SCRIPTS_DIR}/sfdx_auth_manager.py \
                             --action authenticate \
                             --org-username "${ORG_USERNAME}" \
@@ -250,7 +242,6 @@ pipeline {
                     echo "[Stage: Apex PMD Analysis] Running PMD analysis on Apex code..."
                     
                     sh '''
-                        # Run PMD analysis
                         python3 ${SCRIPTS_DIR}/run_pmd_analysis.py \
                             --workspace ${WORKSPACE} \
                             --delta-package ${DELTA_PKG_DIR} \
@@ -258,15 +249,7 @@ pipeline {
                             --fail-on-violation false
                     '''
                     
-                    // Archive PMD report
                     archiveArtifacts artifacts: 'pmd-report.html', allowEmptyArchive: true
-                    
-                    // Publish PMD findings (optional - requires PMD plugin)
-                    // publishHTML([
-                    //     reportDir: '.',
-                    //     reportFiles: 'pmd-report.html',
-                    //     reportName: 'PMD Report'
-                    // ])
                     
                     echo "[Stage: Apex PMD Analysis] PMD analysis completed"
                 }
@@ -279,19 +262,16 @@ pipeline {
                     echo "[Stage: Delta Package Validation] Validating delta package with ${TEST_LEVEL} test level..."
                     
                     sh '''
-                        # Prepare validation command
                         VALIDATION_CMD="sfdx force:mdapi:deploy \
                             --deploydir ${DELTA_PKG_DIR} \
                             -u ${ENVIRONMENT}-org \
                             --checkonly \
                             --testlevel ${TEST_LEVEL}"
                         
-                        # Add specified tests if provided
                         if [ "${TEST_LEVEL}" = "RunSpecifiedTests" ] && [ -n "${SPECIFIED_TESTS}" ]; then
                             VALIDATION_CMD="$VALIDATION_CMD --runtests ${SPECIFIED_TESTS}"
                         fi
                         
-                        # Add additional flags
                         VALIDATION_CMD="$VALIDATION_CMD \
                             --singlepackage \
                             --wait 60 \
@@ -300,7 +280,6 @@ pipeline {
                         echo "Executing validation command..."
                         eval $VALIDATION_CMD | tee ${WORKSPACE}/validation-result.json
                         
-                        # Check validation result
                         VALIDATION_STATUS=$(cat ${WORKSPACE}/validation-result.json | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
                         if [ "$VALIDATION_STATUS" != "Succeeded" ]; then
                             echo "Validation failed. Exit code: $?"
@@ -311,7 +290,6 @@ pipeline {
                         echo "Validation successful!"
                     '''
                     
-                    // Archive validation results
                     archiveArtifacts artifacts: 'validation-result.json', allowEmptyArchive: true
                     
                     echo "[Stage: Delta Package Validation] Delta package validation completed successfully"
@@ -328,18 +306,15 @@ pipeline {
                     echo "[Stage: Deploy Delta Package] Deploying delta package to ${ENVIRONMENT} org..."
                     
                     sh '''
-                        # Execute deployment
                         DEPLOY_CMD="sfdx force:mdapi:deploy \
                             --deploydir ${DELTA_PKG_DIR} \
                             -u ${ENVIRONMENT}-org \
                             --testlevel ${TEST_LEVEL}"
                         
-                        # Add specified tests if provided
                         if [ "${TEST_LEVEL}" = "RunSpecifiedTests" ] && [ -n "${SPECIFIED_TESTS}" ]; then
                             DEPLOY_CMD="$DEPLOY_CMD --runtests ${SPECIFIED_TESTS}"
                         fi
                         
-                        # Add additional flags
                         DEPLOY_CMD="$DEPLOY_CMD \
                             --singlepackage \
                             --wait 60 \
@@ -348,7 +323,6 @@ pipeline {
                         echo "Executing deployment command..."
                         eval $DEPLOY_CMD | tee ${WORKSPACE}/deploy-result.json
                         
-                        # Check deployment result
                         DEPLOY_STATUS=$(cat ${WORKSPACE}/deploy-result.json | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
                         if [ "$DEPLOY_STATUS" != "Succeeded" ]; then
                             echo "Deployment failed. Exit code: $?"
@@ -359,7 +333,6 @@ pipeline {
                         echo "Deployment successful!"
                     '''
                     
-                    // Archive deployment results
                     archiveArtifacts artifacts: 'deploy-result.json', allowEmptyArchive: true
                     
                     echo "[Stage: Deploy Delta Package] Delta package deployed successfully"
@@ -379,23 +352,18 @@ pipeline {
                         sh '''
                             cd ${WORKSPACE}
                             
-                            # Configure Git
                             git config user.email "${GIT_USER_EMAIL}"
                             git config user.name "${GIT_USER_NAME}"
                             
-                            # Setup remote with credentials
                             git remote set-url origin "https://${GIT_USER}:${GIT_PASS}@github.com/manand79/sfdevops.git"
                             
-                            # Checkout target branch
                             echo "Checking out ${TARGET_BRANCH}..."
                             git fetch origin
                             git checkout ${TARGET_BRANCH}
                             
-                            # Merge promotion branch
                             echo "Merging ${PROMOTION_BRANCH} into ${TARGET_BRANCH}..."
                             git merge ${PROMOTION_BRANCH} --no-edit
                             
-                            # Push changes
                             echo "Pushing changes to origin..."
                             git push origin ${TARGET_BRANCH}
                             
@@ -420,20 +388,16 @@ pipeline {
                         sh '''
                             cd ${WORKSPACE}
                             
-                            # Setup remote with credentials
                             git remote set-url origin "https://${GIT_USER}:${GIT_PASS}@github.com/manand79/sfdevops.git"
                             
-                            # Delete promotion branch locally
                             git branch -D ${PROMOTION_BRANCH} || true
                             
-                            # Delete promotion branch on remote
                             git push origin --delete ${PROMOTION_BRANCH} || true
                             
                             echo "Cleanup completed"
                         '''
                     }
                     
-                    // Revoke SFDX authentication
                     sh '''
                         sfdx org logout --target-org ${ENVIRONMENT}-org --no-prompt || true
                     '''
@@ -449,7 +413,6 @@ pipeline {
             script {
                 echo "[Post] Pipeline execution completed"
                 
-                // Collect artifacts
                 sh '''
                     echo "Collecting deployment artifacts..."
                     mkdir -p ${WORKSPACE}/artifacts
@@ -464,19 +427,16 @@ pipeline {
         success {
             script {
                 echo "[Post] Pipeline completed successfully"
-                // Add success notification here (email, Slack, etc.)
             }
         }
         failure {
             script {
                 echo "[Post] Pipeline failed"
-                // Add failure notification here (email, Slack, etc.)
             }
         }
         unstable {
             script {
                 echo "[Post] Pipeline is unstable"
-                // Add unstable notification here
             }
         }
         cleanup {
