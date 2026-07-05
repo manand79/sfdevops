@@ -405,18 +405,6 @@ pipeline {
     }
     
     post {
-        always {
-            echo "[Post] Pipeline execution completed"
-            sh '''
-                echo "Collecting deployment artifacts..."
-                mkdir -p ${WORKSPACE}/artifacts
-                
-                cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ 2>/dev/null || true
-            '''
-        }
         success {
             echo "[Post] Pipeline completed successfully"
         }
@@ -425,12 +413,6 @@ pipeline {
         }
         unstable {
             echo "[Post] Pipeline is unstable"
-        }
-        cleanup {
-            sh '''
-                echo "[Post] Performing final cleanup"
-                rm -rf ${WORKSPACE}/artifacts 2>/dev/null || true
-            '''
         }
     }
 }
