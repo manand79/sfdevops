@@ -406,40 +406,31 @@ pipeline {
     
     post {
         always {
-            script {
-                echo "[Post] Pipeline execution completed"
+            echo "[Post] Pipeline execution completed"
+            sh '''
+                echo "Collecting deployment artifacts..."
+                mkdir -p ${WORKSPACE}/artifacts
                 
-                sh '''
-                    echo "Collecting deployment artifacts..."
-                    mkdir -p ${WORKSPACE}/artifacts
-                    
-                    cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                    cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                    cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                    cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ 2>/dev/null || true
-                '''
-            }
+                cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ 2>/dev/null || true
+                cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
+                cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
+                cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ 2>/dev/null || true
+            '''
         }
         success {
-            script {
-                echo "[Post] Pipeline completed successfully"
-            }
+            echo "[Post] Pipeline completed successfully"
         }
         failure {
-            script {
-                echo "[Post] Pipeline failed"
-            }
+            echo "[Post] Pipeline failed"
         }
         unstable {
-            script {
-                echo "[Post] Pipeline is unstable"
-            }
+            echo "[Post] Pipeline is unstable"
         }
         cleanup {
-            script {
+            sh '''
                 echo "[Post] Performing final cleanup"
-                sh 'rm -rf ${WORKSPACE}/artifacts 2>/dev/null || true'
-            }
+                rm -rf ${WORKSPACE}/artifacts 2>/dev/null || true
+            '''
         }
     }
 }
