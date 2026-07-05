@@ -66,8 +66,7 @@ pipeline {
         DELTA_PKG_DIR = "${WORKSPACE}/delta-package"
         PMD_REPORT = "${WORKSPACE}/pmd-report.html"
         SFDX_CLI_VERSION = "2.47.0"
-        NODE_AUTH_TOKEN = credentials('NPM_AUTH_TOKEN')
-        
+                
         // Derived Environment Variables
         TARGET_BRANCH = "${ENVIRONMENT == 'QA' ? 'main' : 'develop'}"
         PROMOTION_BRANCH = "promote/${ENVIRONMENT}/${BUILD_ID}"
@@ -134,7 +133,24 @@ pipeline {
                         echo "Environment setup:"
                         ls -la
                     '''
-                    
+
+                    // Lenient npm auth: use token if present, continue without it if missing
+                    script {
+                        try {
+                            withCredentials([string(credentialsId: 'NPM_AUTH_TOKEN', variable: 'NODE_AUTH_TOKEN')]) {
+                                sh '''
+                                    echo "NPM_AUTH_TOKEN credential found. Running npm with auth token."
+                                    export NPM_AUTH_TOKEN="${NODE_AUTH_TOKEN}"
+                                    export NODE_AUTH_TOKEN="${NODE_AUTH_TOKEN}"
+
+                                    echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+                                    npm config set //registry.npmjs.org/:_authToken "${NPM_AUTH_TOKEN}" || true
+                                '''
+                            }
+                        } catch (err) {
+                            echo "NPM_AUTH_TOKEN credential not found. Continuing without npm auth."
+                        }
+                    }
                     sh '''
                         echo "Validating SFDX CLI installation..."
                         sfdx --version || {
