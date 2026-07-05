@@ -82,7 +82,6 @@ pipeline {
         timeout(time: 2, unit: 'HOURS')
         timestamps()
         buildDiscarder(logRotator(numToKeepStr: '30'))
-        skipDefaultCheckout()
     }
     
     stages {
@@ -410,9 +409,7 @@ pipeline {
         always {
             script {
                 echo "[Post] Pipeline execution completed"
-            }
-            
-            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                
                 sh '''
                     echo "Collecting deployment artifacts..."
                     mkdir -p ${WORKSPACE}/artifacts
@@ -440,8 +437,9 @@ pipeline {
             }
         }
         cleanup {
-            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                sh 'echo "[Post] Performing final cleanup"'
+            script {
+                echo "[Post] Performing final cleanup"
+                deleteDir()
             }
         }
     }
