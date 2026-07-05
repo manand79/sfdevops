@@ -408,20 +408,20 @@ pipeline {
     
     post {
         always {
-            node {
-                script {
-                    echo "[Post] Pipeline execution completed"
+            script {
+                echo "[Post] Pipeline execution completed"
+            }
+            
+            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                sh '''
+                    echo "Collecting deployment artifacts..."
+                    mkdir -p ${WORKSPACE}/artifacts
                     
-                    sh '''
-                        echo "Collecting deployment artifacts..."
-                        mkdir -p ${WORKSPACE}/artifacts
-                        
-                        cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ || true
-                        cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ || true
-                        cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ || true
-                        cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ || true
-                    '''
-                }
+                    cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ || true
+                    cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ || true
+                    cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ || true
+                    cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ || true
+                '''
             }
         }
         success {
@@ -440,11 +440,8 @@ pipeline {
             }
         }
         cleanup {
-            node {
-                script {
-                    echo "[Post] Performing final cleanup"
-                    deleteDir()
-                }
+            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                sh 'echo "[Post] Performing final cleanup"'
             }
         }
     }
