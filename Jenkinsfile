@@ -408,18 +408,20 @@ pipeline {
     
     post {
         always {
-            script {
-                echo "[Post] Pipeline execution completed"
-                
-                sh '''
-                    echo "Collecting deployment artifacts..."
-                    mkdir -p ${WORKSPACE}/artifacts
+            node {
+                script {
+                    echo "[Post] Pipeline execution completed"
                     
-                    cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ || true
-                    cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ || true
-                    cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ || true
-                    cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ || true
-                '''
+                    sh '''
+                        echo "Collecting deployment artifacts..."
+                        mkdir -p ${WORKSPACE}/artifacts
+                        
+                        cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ || true
+                        cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ || true
+                        cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ || true
+                        cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ || true
+                    '''
+                }
             }
         }
         success {
@@ -438,9 +440,11 @@ pipeline {
             }
         }
         cleanup {
-            script {
-                echo "[Post] Performing final cleanup"
-                deleteDir()
+            node {
+                script {
+                    echo "[Post] Performing final cleanup"
+                    deleteDir()
+                }
             }
         }
     }
