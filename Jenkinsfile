@@ -112,7 +112,7 @@ pipeline {
                     
                     withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         checkout([
-                            \$class: 'GitSCM',
+                            $class: 'GitSCM',
                             branches: [[name: "*/${SOURCE_BRANCH}"]],
                             userRemoteConfigs: [[url: "${GIT_REPO}", credentialsId: 'SFDEVOPS_GIT_CREDENTIALS']]
                         ])
