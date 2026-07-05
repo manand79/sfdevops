@@ -2,8 +2,6 @@
 // Branch Strategy: Promotional Branching (develop -> QA, main -> Prod)
 // Environments: Dev (develop branch), QA (main branch)
 
-@Library('shared-library') _
-
 pipeline {
     agent any
     
