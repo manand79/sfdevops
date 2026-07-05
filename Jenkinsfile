@@ -104,8 +104,7 @@ pipeline {
         stage('Code Checkout') {
             steps {
                 script {
-                    echo "[Stage: Code Checkout] Starting code checkout..."
-                    deleteDir()
+                    echo "[Stage: Code Checkout] Checking out source branch..."
                     
                     withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         checkout([
@@ -414,10 +413,10 @@ pipeline {
                     echo "Collecting deployment artifacts..."
                     mkdir -p ${WORKSPACE}/artifacts
                     
-                    cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ || true
-                    cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ || true
-                    cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ || true
-                    cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ || true
+                    cp -r ${DELTA_PKG_DIR}/* ${WORKSPACE}/artifacts/ 2>/dev/null || true
+                    cp ${WORKSPACE}/validation-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
+                    cp ${WORKSPACE}/deploy-result.json ${WORKSPACE}/artifacts/ 2>/dev/null || true
+                    cp ${PMD_REPORT} ${WORKSPACE}/artifacts/ 2>/dev/null || true
                 '''
             }
         }
@@ -439,7 +438,7 @@ pipeline {
         cleanup {
             script {
                 echo "[Post] Performing final cleanup"
-                deleteDir()
+                sh 'rm -rf ${WORKSPACE}/artifacts 2>/dev/null || true'
             }
         }
     }
