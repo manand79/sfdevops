@@ -179,12 +179,21 @@ pipeline {
                 '''
             } else {
                 bat '''
-                    echo Validating SFDX CLI installation...
-                    call sfdx --version
-                    if errorlevel 1 (
-                        echo Installing SFDX CLI...
-                        call npm install -g @salesforce/cli
-                    )
+                    echo Validating Salesforce CLI installation...
+    call sf --version
+    if errorlevel 1 (
+        echo Installing Salesforce CLI...
+        call npm install -g @salesforce/cli
+
+        rem Ensure npm global bin is on PATH for this build
+        for /f "delims=" %%i in ('npm bin -g') do set "NPM_GLOBAL_BIN=%%i"
+        set "PATH=%NPM_GLOBAL_BIN%;%PATH%"
+    )
+
+    rem Re-check sf first
+    call sf --version
+    if errorlevel 1 (
+        rem Fallback to sfdx shim if present
                     call sfdx --version
                 '''
             }
