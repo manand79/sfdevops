@@ -42,8 +42,8 @@ pipeline {
         // Git Configuration
         GIT_REPO = "https://github.com/manand79/sfdevops.git"
         GIT_CREDENTIALS_ID = "SFDEVOPS_GIT_CREDENTIALS"
-        GIT_USER_EMAIL = credentials('GIT_USER_EMAIL')
-        GIT_USER_NAME = credentials('GIT_USER_NAME')
+        GIT_USER_EMAIL = "ci-bot@users.noreply.github.com"
+        GIT_USER_NAME = "ci-bot"
         
         // Salesforce Org Credentials
         DEV_ORG_USERNAME = credentials('DEV_ORG_USERNAME')
