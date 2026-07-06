@@ -213,25 +213,46 @@ pipeline {
                     echo "[Stage: Promotional Branch Strategy] Setting up promotion workflow..."
                     
                     withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh '''
-                            cd ${WORKSPACE}
-                            
-                            git config user.email "${GIT_USER_EMAIL}"
-                            git config user.name "${GIT_USER_NAME}"
-                            
-                            git remote set-url origin "https://${GIT_USER}:${GIT_PASS}@github.com/manand79/sfdevops.git"
-                            
-                            git fetch origin
-                            
-                            echo "Creating promotion branch: ${PROMOTION_BRANCH}"
-                            git checkout -b ${PROMOTION_BRANCH} origin/${TARGET_BRANCH}
-                            
-                            echo "Merging changes from ${SOURCE_BRANCH} into ${PROMOTION_BRANCH}"
-                            git merge origin/${SOURCE_BRANCH} --no-edit
-                            
-                            git log --oneline -5
-                        '''
-                    }
+    if (isUnix()) {
+        sh '''
+            cd ${WORKSPACE}
+
+            git config user.email "${GIT_USER_EMAIL}"
+            git config user.name "${GIT_USER_NAME}"
+
+            git remote set-url origin "https://${GIT_USER}:${GIT_PASS}@github.com/manand79/sfdevops.git"
+
+            git fetch origin
+
+            echo "Creating promotion branch: ${PROMOTION_BRANCH}"
+            git checkout -b ${PROMOTION_BRANCH} origin/${TARGET_BRANCH}
+
+            echo "Merging changes from ${SOURCE_BRANCH} into ${PROMOTION_BRANCH}"
+            git merge origin/${SOURCE_BRANCH} --no-edit
+
+            git log --oneline -5
+        '''
+    } else {
+        bat '''
+            cd /d "%WORKSPACE%"
+
+            git config user.email "%GIT_USER_EMAIL%"
+            git config user.name "%GIT_USER_NAME%"
+
+            git remote set-url origin "https://%GIT_USER%:%GIT_PASS%@github.com/manand79/sfdevops.git"
+
+            git fetch origin
+
+            echo Creating promotion branch: %PROMOTION_BRANCH%
+            git checkout -b %PROMOTION_BRANCH% origin/%TARGET_BRANCH%
+
+            echo Merging changes from %SOURCE_BRANCH% into %PROMOTION_BRANCH%
+            git merge origin/%SOURCE_BRANCH% --no-edit
+
+            git log --oneline -5
+        '''
+    }
+}
                     
                     echo "[Stage: Promotional Branch Strategy] Promotion branch created and merged successfully"
                 }
