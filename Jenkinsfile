@@ -260,35 +260,58 @@ pipeline {
         }
         
         stage('Prepare Delta Package') {
-            steps {
-                script {
-                    echo "[Stage: Prepare Delta Package] Creating delta package..."
-                    
-                    sh '''
-                        python3 ${SCRIPTS_DIR}/delta_package_manager.py \
-                            --workspace ${WORKSPACE} \
-                            --source-branch ${SOURCE_BRANCH} \
-                            --target-branch ${TARGET_BRANCH} \
-                            --delta-output ${DELTA_PKG_DIR} \
-                            --action prepare
-                    '''
-                    
-                    sh '''
-                        if [ ! -f "${DELTA_PKG_DIR}/package.xml" ]; then
-                            echo "ERROR: Delta package.xml not found"
-                            exit 1
-                        fi
-                        
-                        echo "Delta package contents:"
-                        ls -la ${DELTA_PKG_DIR}/
-                        echo "\\nPackage.xml:"
-                        head -50 ${DELTA_PKG_DIR}/package.xml
-                    '''
-                    
-                    echo "[Stage: Prepare Delta Package] Delta package created successfully"
-                }
+    steps {
+        script {
+            echo "[Stage: Prepare Delta Package] Creating delta package..."
+
+            if (isUnix()) {
+                sh '''
+                    python3 ${SCRIPTS_DIR}/delta_package_manager.py \
+                        --workspace ${WORKSPACE} \
+                        --source-branch ${SOURCE_BRANCH} \
+                        --target-branch ${TARGET_BRANCH} \
+                        --delta-output ${DELTA_PKG_DIR} \
+                        --action prepare
+                '''
+
+                sh '''
+                    if [ ! -f "${DELTA_PKG_DIR}/package.xml" ]; then
+                        echo "ERROR: Delta package.xml not found"
+                        exit 1
+                    fi
+
+                    echo "Delta package contents:"
+                    ls -la ${DELTA_PKG_DIR}/
+                    echo "\\nPackage.xml:"
+                    head -50 ${DELTA_PKG_DIR}/package.xml
+                '''
+            } else {
+                bat '''
+                    py -3 "%SCRIPTS_DIR%\\delta_package_manager.py" ^
+                        --workspace "%WORKSPACE%" ^
+                        --source-branch "%SOURCE_BRANCH%" ^
+                        --target-branch "%TARGET_BRANCH%" ^
+                        --delta-output "%DELTA_PKG_DIR%" ^
+                        --action prepare
+                '''
+
+                bat '''
+                    if not exist "%DELTA_PKG_DIR%\\package.xml" (
+                        echo ERROR: Delta package.xml not found
+                        exit /b 1
+                    )
+
+                    echo Delta package contents:
+                    dir "%DELTA_PKG_DIR%"
+                    echo Package.xml:
+                    powershell -NoProfile -Command "Get-Content -Path '%DELTA_PKG_DIR%\\package.xml' -TotalCount 50"
+                '''
             }
+
+            echo "[Stage: Prepare Delta Package] Delta package created successfully"
         }
+    }
+}
         
         stage('Salesforce Org Authentication') {
             steps {
