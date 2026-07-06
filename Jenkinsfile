@@ -185,15 +185,16 @@ pipeline {
     if errorlevel 1 (
         echo Installing Salesforce CLI...
         call npm install -g @salesforce/cli
-
-        for /f "delims=" %%i in ('npm prefix -g') do set "NPM_GLOBAL_PREFIX=%%i"
-        set "PATH=%NPM_GLOBAL_PREFIX%;%PATH%"
     )
+
+    set "NPM_GLOBAL_PREFIX=%APPDATA%\\npm"
+    set "PATH=%NPM_GLOBAL_PREFIX%;%PATH%"
 
     where sf >nul 2>nul
     if errorlevel 1 (
         echo ERROR: sf still not found after install.
-        call npm prefix -g
+        echo Tried: %NPM_GLOBAL_PREFIX%\\sf.cmd
+        dir "%NPM_GLOBAL_PREFIX%" 2>nul
         exit /b 1
     )
 
