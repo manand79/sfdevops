@@ -179,23 +179,30 @@ pipeline {
                 '''
             } else {
                 bat '''
-                    echo Validating Salesforce CLI installation...
-    call sf --version
+    echo Validating Salesforce CLI installation...
+
+    where sf >nul 2>nul
     if errorlevel 1 (
         echo Installing Salesforce CLI...
         call npm install -g @salesforce/cli
 
-        rem Ensure npm global bin is on PATH for this build
-        for /f "delims=" %%i in ('npm bin -g') do set "NPM_GLOBAL_BIN=%%i"
-        set "PATH=%NPM_GLOBAL_BIN%;%PATH%"
+        rem IMPORTANT: use %%i in batch files (Jenkins bat step)
+        for /f "delims=" %%i in ('npm prefix -g') do set "NPM_GLOBAL_PREFIX=%%i"
+        set "PATH=%NPM_GLOBAL_PREFIX%;%NPM_GLOBAL_PREFIX%\\node_modules\\.bin;%PATH%"
     )
 
-    rem Re-check sf first
-    call sf --version
+    where sf >nul 2>nul
     if errorlevel 1 (
-        rem Fallback to sfdx shim if present
-                    call sfdx --version
-                '''
+        echo ERROR: sf still not found after install.
+        echo npm global prefix:
+        call npm prefix -g
+        echo npm global bin:
+        call npm bin -g
+        exit /b 1
+    )
+
+    call sf --version
+'''
             }
 
             echo "[Stage: Setup & Validation] Environment setup completed"
