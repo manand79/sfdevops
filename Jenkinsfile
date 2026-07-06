@@ -265,48 +265,28 @@ pipeline {
             echo "[Stage: Prepare Delta Package] Creating delta package..."
 
             if (isUnix()) {
-                sh '''
-                    python3 ${SCRIPTS_DIR}/delta_package_manager.py \
-                        --workspace ${WORKSPACE} \
-                        --source-branch ${SOURCE_BRANCH} \
-                        --target-branch ${TARGET_BRANCH} \
-                        --delta-output ${DELTA_PKG_DIR} \
-                        --action prepare
-                '''
-
-                sh '''
-                    if [ ! -f "${DELTA_PKG_DIR}/package.xml" ]; then
-                        echo "ERROR: Delta package.xml not found"
-                        exit 1
-                    fi
-
-                    echo "Delta package contents:"
-                    ls -la ${DELTA_PKG_DIR}/
-                    echo "\\nPackage.xml:"
-                    head -50 ${DELTA_PKG_DIR}/package.xml
-                '''
-            } else {
-                bat '''
-                    py -3 "%SCRIPTS_DIR%\\delta_package_manager.py" ^
-                        --workspace "%WORKSPACE%" ^
-                        --source-branch "%SOURCE_BRANCH%" ^
-                        --target-branch "%TARGET_BRANCH%" ^
-                        --delta-output "%DELTA_PKG_DIR%" ^
-                        --action prepare
-                '''
-
-                bat '''
-                    if not exist "%DELTA_PKG_DIR%\\package.xml" (
-                        echo ERROR: Delta package.xml not found
-                        exit /b 1
-                    )
-
-                    echo Delta package contents:
-                    dir "%DELTA_PKG_DIR%"
-                    echo Package.xml:
-                    powershell -NoProfile -Command "Get-Content -Path '%DELTA_PKG_DIR%\\package.xml' -TotalCount 50"
-                '''
-            }
+    sh '''
+        if [ ! -f "${SCRIPTS_DIR}/delta_package_manager.py" ]; then
+            echo "ERROR: Missing script: ${SCRIPTS_DIR}/delta_package_manager.py"
+            echo "Workspace contents:"
+            ls -la "${WORKSPACE}"
+            echo "Scripts dir contents (if exists):"
+            ls -la "${SCRIPTS_DIR}" || true
+            exit 1
+        fi
+    '''
+} else {
+    bat '''
+        if not exist "%SCRIPTS_DIR%\\delta_package_manager.py" (
+            echo ERROR: Missing script: %SCRIPTS_DIR%\\delta_package_manager.py
+            echo Workspace contents:
+            dir "%WORKSPACE%"
+            echo Scripts dir contents (if exists):
+            dir "%SCRIPTS_DIR%" 2>nul
+            exit /b 1
+        )
+    '''
+}
 
             echo "[Stage: Prepare Delta Package] Delta package created successfully"
         }
