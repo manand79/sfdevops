@@ -119,51 +119,80 @@ pipeline {
         }
         
         stage('Setup & Validation') {
-            steps {
-                script {
-                    echo "[Stage: Setup & Validation] Setting up environment..."
-                    
-                    sh '''
-                        mkdir -p ${DEPLOY_DIR}
-                        mkdir -p ${DELTA_PKG_DIR}
-                        mkdir -p ${SCRIPTS_DIR}
-                        mkdir -p ${CONFIG_DIR}
-                        
-                        echo "Current working directory: $(pwd)"
-                        echo "Environment setup:"
-                        ls -la
-                    '''
+    steps {
+        script {
+            echo "[Stage: Setup & Validation] Setting up environment..."
 
-                    // Lenient npm auth: use token if present, continue without it if missing
-                    script {
-                        try {
-                            withCredentials([string(credentialsId: 'NPM_AUTH_TOKEN', variable: 'NODE_AUTH_TOKEN')]) {
-                                sh '''
-                                    echo "NPM_AUTH_TOKEN credential found. Running npm with auth token."
-                                    export NPM_AUTH_TOKEN="${NODE_AUTH_TOKEN}"
-                                    export NODE_AUTH_TOKEN="${NODE_AUTH_TOKEN}"
+            if (isUnix()) {
+                sh '''
+                    mkdir -p ${DEPLOY_DIR}
+                    mkdir -p ${DELTA_PKG_DIR}
+                    mkdir -p ${SCRIPTS_DIR}
+                    mkdir -p ${CONFIG_DIR}
 
-                                    echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-                                    npm config set //registry.npmjs.org/:_authToken "${NPM_AUTH_TOKEN}" || true
-                                '''
-                            }
-                        } catch (err) {
-                            echo "NPM_AUTH_TOKEN credential not found. Continuing without npm auth."
-                        }
-                    }
-                    sh '''
-                        echo "Validating SFDX CLI installation..."
-                        sfdx --version || {
-                            echo "Installing SFDX CLI..."
-                            npm install -g @salesforce/cli
-                        }
-                        sfdx --version
-                    '''
-                    
-                    echo "[Stage: Setup & Validation] Environment setup completed"
-                }
+                    echo "Current working directory: $(pwd)"
+                    echo "Environment setup:"
+                    ls -la
+                '''
+            } else {
+                bat '''
+                    if not exist "%DEPLOY_DIR%" mkdir "%DEPLOY_DIR%"
+                    if not exist "%DELTA_PKG_DIR%" mkdir "%DELTA_PKG_DIR%"
+                    if not exist "%SCRIPTS_DIR%" mkdir "%SCRIPTS_DIR%"
+                    if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
+                    echo Current working directory: %CD%
+                    dir
+                '''
             }
+
+            // Lenient npm auth
+            try {
+                withCredentials([string(credentialsId: 'NPM_AUTH_TOKEN', variable: 'NODE_AUTH_TOKEN')]) {
+                    if (isUnix()) {
+                        sh '''
+                            echo "NPM_AUTH_TOKEN credential found. Running npm with auth token."
+                            export NPM_AUTH_TOKEN="${NODE_AUTH_TOKEN}"
+                            export NODE_AUTH_TOKEN="${NODE_AUTH_TOKEN}"
+                            echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+                            npm config set //registry.npmjs.org/:_authToken "${NPM_AUTH_TOKEN}" || true
+                        '''
+                    } else {
+                        bat '''
+                            echo NPM_AUTH_TOKEN credential found. Running npm with auth token.
+                            > "%USERPROFILE%\\.npmrc" echo //registry.npmjs.org/:_authToken=%NODE_AUTH_TOKEN%
+                            call npm config set //registry.npmjs.org/:_authToken "%NODE_AUTH_TOKEN%"
+                        '''
+                    }
+                }
+            } catch (err) {
+                echo "NPM_AUTH_TOKEN credential not found. Continuing without npm auth."
+            }
+
+            if (isUnix()) {
+                sh '''
+                    echo "Validating SFDX CLI installation..."
+                    sfdx --version || {
+                        echo "Installing SFDX CLI..."
+                        npm install -g @salesforce/cli
+                    }
+                    sfdx --version
+                '''
+            } else {
+                bat '''
+                    echo Validating SFDX CLI installation...
+                    call sfdx --version
+                    if errorlevel 1 (
+                        echo Installing SFDX CLI...
+                        call npm install -g @salesforce/cli
+                    )
+                    call sfdx --version
+                '''
+            }
+
+            echo "[Stage: Setup & Validation] Environment setup completed"
         }
+    }
+}
         
         stage('Promotional Branch Strategy') {
             steps {
