@@ -40,8 +40,8 @@ pipeline {
     
     environment {
         // Git Configuration
-        GIT_REPO = credentials('SFDEVOPS_GIT_REPO')
-        GIT_CREDENTIALS = credentials('SFDEVOPS_GIT_CREDENTIALS')
+        GIT_REPO = "https://github.com/manand79/sfdevops.git"
+        GIT_CREDENTIALS_ID = "SFDEVOPS_GIT_CREDENTIALS"
         GIT_USER_EMAIL = credentials('GIT_USER_EMAIL')
         GIT_USER_NAME = credentials('GIT_USER_NAME')
         
@@ -109,7 +109,7 @@ pipeline {
                         checkout([
                             $class: 'GitSCM',
                             branches: [[name: "*/${SOURCE_BRANCH}"]],
-                            userRemoteConfigs: [[url: "${GIT_REPO}", credentialsId: 'SFDEVOPS_GIT_CREDENTIALS']]
+                            userRemoteConfigs: [[url: "${GIT_REPO}", credentialsId: "${GIT_CREDENTIALS_ID}"]]
                         ])
                     }
                     
