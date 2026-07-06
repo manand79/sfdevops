@@ -294,25 +294,38 @@ pipeline {
 }
         
         stage('Salesforce Org Authentication') {
-            steps {
-                script {
-                    echo "[Stage: Salesforce Org Authentication] Authenticating to ${ENVIRONMENT} org..."
-                    
-                    sh '''
-                        python3 ${SCRIPTS_DIR}/sfdx_auth_manager.py \
-                            --action authenticate \
-                            --org-username "${ORG_USERNAME}" \
-                            --client-id "${CLIENT_ID}" \
-                            --client-secret "${CLIENT_SECRET}" \
-                            --org-alias "${ENVIRONMENT}-org" \
-                            --auth-type oauth \
-                            --workspace ${WORKSPACE}
-                    '''
-                    
-                    echo "[Stage: Salesforce Org Authentication] Authentication completed"
-                }
+    steps {
+        script {
+            echo "[Stage: Salesforce Org Authentication] Authenticating to ${ENVIRONMENT} org..."
+
+            if (isUnix()) {
+                sh '''
+                    python3 ${SCRIPTS_DIR}/sfdx_auth_manager.py \
+                        --action authenticate \
+                        --org-username "${ORG_USERNAME}" \
+                        --client-id "${CLIENT_ID}" \
+                        --client-secret "${CLIENT_SECRET}" \
+                        --org-alias "${ENVIRONMENT}-org" \
+                        --auth-type oauth \
+                        --workspace ${WORKSPACE}
+                '''
+            } else {
+                bat '''
+                    py -3 "%SCRIPTS_DIR%\\sfdx_auth_manager.py" ^
+                        --action authenticate ^
+                        --org-username "%ORG_USERNAME%" ^
+                        --client-id "%CLIENT_ID%" ^
+                        --client-secret "%CLIENT_SECRET%" ^
+                        --org-alias "%ENVIRONMENT%-org" ^
+                        --auth-type oauth ^
+                        --workspace "%WORKSPACE%"
+                '''
             }
+
+            echo "[Stage: Salesforce Org Authentication] Authentication completed"
         }
+    }
+}
         
         stage('Apex PMD Analysis') {
             steps {
