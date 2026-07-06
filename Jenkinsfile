@@ -277,15 +277,15 @@ pipeline {
     '''
 } else {
     bat '''
-        if not exist "%SCRIPTS_DIR%\\delta_package_manager.py" (
-            echo ERROR: Missing script: %SCRIPTS_DIR%\\delta_package_manager.py
-            echo Workspace contents:
-            dir "%WORKSPACE%"
-            echo Scripts dir contents (if exists):
-            dir "%SCRIPTS_DIR%" 2>nul
-            exit /b 1
-        )
-    '''
+    if not exist "%SCRIPTS_DIR%\\delta_package_manager.py" (
+        echo ERROR: Missing script: %SCRIPTS_DIR%\\delta_package_manager.py
+        echo Workspace contents:
+        dir "%WORKSPACE%"
+        echo Scripts dir contents ^(if exists^):
+        dir "%SCRIPTS_DIR%" 2>nul
+        exit /b 1
+    )
+'''
 }
 
             echo "[Stage: Prepare Delta Package] Delta package created successfully"
