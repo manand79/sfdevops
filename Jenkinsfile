@@ -293,33 +293,50 @@ pipeline {
     }
 }
         
-        stage('Salesforce Org Authentication') {
+       stage('Salesforce Org Authentication') {
     steps {
         script {
-            echo "[Stage: Salesforce Org Authentication] Authenticating to ${ENVIRONMENT} org..."
+            echo "[Stage: Salesforce Org Authentication] Authenticating to ${ENVIRONMENT} org (JWT)..."
 
-            if (isUnix()) {
-                sh '''
-                    python3 ${SCRIPTS_DIR}/sfdx_auth_manager.py \
-                        --action authenticate \
-                        --org-username "${ORG_USERNAME}" \
-                        --client-id "${CLIENT_ID}" \
-                        --client-secret "${CLIENT_SECRET}" \
-                        --org-alias "${ENVIRONMENT}-org" \
-                        --auth-type oauth \
-                        --workspace ${WORKSPACE}
-                '''
-            } else {
-                bat '''
-                    py -3 "%SCRIPTS_DIR%\\sfdx_auth_manager.py" ^
-                        --action authenticate ^
-                        --org-username "%ORG_USERNAME%" ^
-                        --client-id "%CLIENT_ID%" ^
-                        --client-secret "%CLIENT_SECRET%" ^
-                        --org-alias "%ENVIRONMENT%-org" ^
-                        --auth-type oauth ^
-                        --workspace "%WORKSPACE%"
-                '''
+            // Store your server.key in Jenkins as a "Secret file" credential, e.g. SF_JWT_KEY_FILE
+            withCredentials([file(credentialsId: 'SF_JWT_KEY_FILE', variable: 'JWT_KEY_FILE')]) {
+                if (isUnix()) {
+                    sh '''
+                        export SF_DISABLE_TELEMETRY=true
+                        export SFDX_DISABLE_TELEMETRY=true
+                        export SF_AUTOUPDATE_DISABLE=true
+                        export SFDX_AUTOUPDATE_DISABLE=true
+                        export CI=true
+
+                        python3 ${SCRIPTS_DIR}/sfdx_auth_manager.py \
+                            --action authenticate \
+                            --org-username "${ORG_USERNAME}" \
+                            --client-id "${CLIENT_ID}" \
+                            --org-alias "${ENVIRONMENT}-org" \
+                            --auth-type jwt \
+                            --jwt-key-file "${JWT_KEY_FILE}" \
+                            --auth-url "https://login.salesforce.com" \
+                            --workspace "${WORKSPACE}"
+                    '''
+                } else {
+                    bat '''
+                        set "SF_DISABLE_TELEMETRY=true"
+                        set "SFDX_DISABLE_TELEMETRY=true"
+                        set "SF_AUTOUPDATE_DISABLE=true"
+                        set "SFDX_AUTOUPDATE_DISABLE=true"
+                        set "CI=true"
+
+                        py -3 "%SCRIPTS_DIR%\\sfdx_auth_manager.py" ^
+                            --action authenticate ^
+                            --org-username "%ORG_USERNAME%" ^
+                            --client-id "%CLIENT_ID%" ^
+                            --org-alias "%ENVIRONMENT%-org" ^
+                            --auth-type jwt ^
+                            --jwt-key-file "%JWT_KEY_FILE%" ^
+                            --auth-url "https://login.salesforce.com" ^
+                            --workspace "%WORKSPACE%"
+                    '''
+                }
             }
 
             echo "[Stage: Salesforce Org Authentication] Authentication completed"
