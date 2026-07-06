@@ -178,7 +178,7 @@ pipeline {
                     sfdx --version
                 '''
             } else {
-                bat '''
+               bat '''
     echo Validating Salesforce CLI installation...
 
     where sf >nul 2>nul
@@ -186,9 +186,11 @@ pipeline {
         echo Installing Salesforce CLI...
         call npm install -g @salesforce/cli
 
-        rem IMPORTANT: use %%i in batch files (Jenkins bat step)
+        rem IMPORTANT: in batch files use %%i, not %i
         for /f "delims=" %%i in ('npm prefix -g') do set "NPM_GLOBAL_PREFIX=%%i"
-        set "PATH=%NPM_GLOBAL_PREFIX%;%NPM_GLOBAL_PREFIX%\\node_modules\\.bin;%PATH%"
+
+        rem Salesforce CLI executables are directly under npm global prefix on Windows
+        set "PATH=%NPM_GLOBAL_PREFIX%;%PATH%"
     )
 
     where sf >nul 2>nul
@@ -196,8 +198,8 @@ pipeline {
         echo ERROR: sf still not found after install.
         echo npm global prefix:
         call npm prefix -g
-        echo npm global bin:
-        call npm bin -g
+        echo PATH is:
+        echo %PATH%
         exit /b 1
     )
 
