@@ -186,20 +186,14 @@ pipeline {
         echo Installing Salesforce CLI...
         call npm install -g @salesforce/cli
 
-        rem IMPORTANT: in batch files use %%i, not %i
         for /f "delims=" %%i in ('npm prefix -g') do set "NPM_GLOBAL_PREFIX=%%i"
-
-        rem Salesforce CLI executables are directly under npm global prefix on Windows
         set "PATH=%NPM_GLOBAL_PREFIX%;%PATH%"
     )
 
     where sf >nul 2>nul
     if errorlevel 1 (
         echo ERROR: sf still not found after install.
-        echo npm global prefix:
         call npm prefix -g
-        echo PATH is:
-        echo %PATH%
         exit /b 1
     )
 
