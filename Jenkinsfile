@@ -41,7 +41,7 @@ pipeline {
     environment {
         // Git Configuration
         GIT_REPO = "https://github.com/manand79/sfdevops.git"
-        GIT_CREDENTIALS_ID = "SFDEVOPS_GIT_CREDENTIALS"
+        GIT_CREDENTIALS_ID = "2f74db35-d085-4f58-962c-043ef60aa4e8"
         GIT_USER_EMAIL = "ci-bot@users.noreply.github.com"
         GIT_USER_NAME = "ci-bot"
         
@@ -105,7 +105,7 @@ pipeline {
                 script {
                     echo "[Stage: Code Checkout] Checking out source branch..."
                     
-                    withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         checkout([
                             $class: 'GitSCM',
                             branches: [[name: "*/${SOURCE_BRANCH}"]],
@@ -170,7 +170,7 @@ pipeline {
                 script {
                     echo "[Stage: Promotional Branch Strategy] Setting up promotion workflow..."
                     
-                    withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh '''
                             cd ${WORKSPACE}
                             
@@ -360,7 +360,7 @@ pipeline {
                 script {
                     echo "[Stage: Post-Deployment] Merging promotion branch to target branch..."
                     
-                    withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh '''
                             cd ${WORKSPACE}
                             
@@ -396,7 +396,7 @@ pipeline {
                 script {
                     echo "[Stage: Cleanup] Cleaning up promotion branch..."
                     
-                    withCredentials([usernamePassword(credentialsId: 'SFDEVOPS_GIT_CREDENTIALS', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh '''
                             cd ${WORKSPACE}
                             
